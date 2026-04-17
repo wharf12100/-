@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖字辨識挑戰 - 語文競賽如何形塑書法教育</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&family=Noto+Sans+TC:wght@300;400;500&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f5f2;
+            color: #333;
+        }
+        .serif {
+            font-family: 'Noto Serif TC', serif;
+        }
+        .quiz-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .option-btn {
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        .option-btn:hover {
+            background-color: #fdf2f2;
+            border-color: #9b2c2c;
+        }
+        .progress-bar {
+            height: 6px;
+            background-color: #edf2f7;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #9b2c2c;
+            transition: width 0.3s ease;
+        }
+        .hidden { display: none; }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold serif mb-4 text-stone-800">帖字辨識挑戰</h1>
+        <p class="text-stone-600 leading-relaxed">
+            在語文競賽中，「帖字」常因不符標準字形而被排除。
+            <br class="hidden md:block">挑戰看看，你能從歷代書家的美感筆觸中辨識出這些字嗎？
+        </p>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="quiz-container text-center">
+        <div class="py-8">
+            <div class="text-6xl mb-6">🖋️</div>
+            <h2 class="text-2xl font-bold mb-4 serif">準備好接受挑戰了嗎？</h2>
+            <p class="mb-8 text-gray-500">共 10 題，請選出照片中對應的正確漢字。</p>
+            <button onclick="startQuiz()" class="bg-stone-800 text-white px-8 py-3 rounded-full hover:bg-stone-700 transition">開始測驗</button>
+        </div>
+    </div>
+
+    <!-- Quiz Screen -->
+    <div id="quiz-screen" class="quiz-container hidden">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-sm font-medium text-stone-500">進度 <span id="current-idx">1</span> / 10</span>
+            <span class="text-sm font-medium text-stone-500">得分：<span id="score-display">0</span></span>
+        </div>
+        <div class="progress-bar mb-8">
+            <div id="progress-fill" class="progress-fill" style="width: 10%;"></div>
+        </div>
+
+        <div id="question-area">
+            <div class="flex justify-center">
+                <img id="quiz-image" src="" alt="書法題目照片">
+            </div>
+            <h3 class="text-lg font-medium mb-6 text-center text-stone-700 serif">請問照片中是哪一個字？</h3>
+            <div id="options-grid" class="grid grid-cols-2 gap-4">
+                <!-- Options will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Screen -->
+    <div id="result-screen" class="quiz-container hidden text-center">
+        <h2 class="text-3xl font-bold mb-4 serif">測驗結束！</h2>
+        <div class="text-5xl font-bold text-stone-800 mb-6" id="final-score">0 / 10</div>
+        <p id="result-message" class="text-stone-600 mb-8"></p>
+        <button onclick="location.reload()" class="border-2 border-stone-800 text-stone-800 px-8 py-3 rounded-full hover:bg-stone-50 transition">再試一次</button>
+    </div>
+
+    <script>
+        const quizData = [
+            { img: 'IMG_7092.jpg', correct: '怪', options: ['怪', '性', '快', '恆'] },
+            { img: 'IMG_7093.jpg', correct: '正', options: ['正', '止', '丘', '旦'] },
+            { img: 'IMG_7095.jpg', correct: '處', options: ['處', '虛', '虎', '慮'] },
+            { img: 'IMG_7096.jpg', correct: '醉', options: ['醉', '醒', '醇', '酢'] },
+            { img: 'IMG_7097.jpg', correct: '低', options: ['低', '底', '抵', '邸'] },
+            { img: 'IMG_7098.jpg', correct: '窗', options: ['窗', '容', '究', '窮'] },
+            { img: 'IMG_7099.jpg', correct: '辭', options: ['辭', '亂', '避', '辯'] },
+            { img: 'IMG_7100.jpg', correct: '勇', options: ['勇', '男', '通', '勞'] },
+            { img: 'IMG_7102.jpg', correct: '紫', options: ['紫', '此', '柴', '些'] },
+            { img: 'IMG_7103.jpg', correct: '定', options: ['定', '是', '足', '促'] }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const data = quizData[currentQuestion];
+            document.getElementById('current-idx').innerText = currentQuestion + 1;
+            document.getElementById('quiz-image').src = data.img;
+            document.getElementById('progress-fill').style.width = ((currentQuestion + 1) / quizData.length * 100) + '%';
+            
+            const optionsGrid = document.getElementById('options-grid');
+            optionsGrid.innerHTML = '';
+            
+            // 隨機排列選項
+            const shuffledOptions = [...data.options].sort(() => Math.random() - 0.5);
+            
+            shuffledOptions.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn serif text-xl py-4 rounded-lg bg-white hover:shadow-md';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(answer) {
+            if (answer === quizData[currentQuestion].correct) {
+                score++;
+                document.getElementById('score-display').innerText = score;
+            }
+
+            currentQuestion++;
+            if (currentQuestion < quizData.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score + ' / ' + quizData.length;
+            
+            let msg = '';
+            if (score === 10) msg = "太厲害了！你對帖字的辨識力驚人，簡直是書法專家。";
+            else if (score >= 7) msg = "表現優異！你已經能體會書法中結構與佈局的美感。";
+            else if (score >= 4) msg = "還不錯喔！帖字雖然不符合標準字，但更有藝術韻味。";
+            else msg = "別灰心！書法帖字博大精深，這正是它有趣的地方。";
+            
+            document.getElementById('result-message').innerText = msg;
+        }
+    </script>
+</body>
+</html>
